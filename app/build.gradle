@@ -1,0 +1,33 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    // Use Maven Central for resolving dependencies.
+    mavenCentral()
+}
+
+dependencies {
+    implementation files('lib/junit-platform-console-standalone-1.7.0-M1.jar')
+    implementation files('lib/json-20231013.jar')
+    implementation files('lib/jsonassert-1.5.0.jar')
+}
+
+tasks.named('test') {
+    // Use JUnit Platform for unit tests.
+    useJUnitPlatform()
+}
+
+
+// Apply a specific Java toolchain to ease working on different environments.
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+task compile {
+    description("Checks if main code can compile with test code")
+    group = 'verification'
+    dependsOn 'testClasses'
+}
