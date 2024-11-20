@@ -2,6 +2,7 @@ package q15.confluence;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ConfluencePage extends ConfluenceNode {
     private String content;
@@ -58,11 +59,7 @@ public class ConfluencePage extends ConfluenceNode {
     }
 
     private String getContributors() {
-        String contributors = "";
-        for (ConfluenceAuthor contributor : this.contributors) {
-            contributors += contributor.getName() + ", ";
-        }
-        contributors = contributors.substring(0, contributors.length() - 2);
-        return contributors;
+        
+        return this.contributors.stream().map(contributor -> contributor.getName()).collect(Collectors.joining(", "));
     }
 }

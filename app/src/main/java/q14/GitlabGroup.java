@@ -4,13 +4,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class GitlabGroup implements GitlabPermissionsNode {
+public class GitlabGroup extends GitlabPermissionsNode {
     private String name;
     private Map<User, PermissionsLevel> members = new HashMap<User, PermissionsLevel>();
     private List<GitlabPermissionsNode> subgroups = new ArrayList<GitlabPermissionsNode>();
@@ -25,31 +24,42 @@ public class GitlabGroup implements GitlabPermissionsNode {
     }
 
     public List<String> getUsersOfPermissionLevel(PermissionsLevel level) {
-        Set<User> membersSet = members.keySet();
-        List<String> names = new ArrayList<String>();
-        for (User member : membersSet) {
-            if (members.get(member).equals(level)) {
-                names.add(member.getName());
-            }
-        }
-
-        return names;
+        return members.keySet().stream().filter(member -> members.get(member).equals(level)).map(member -> member.getName()).collect(Collectors.toList());
     }
 
     @Override
     public PermissionsLevel getUserPermissions(User user) {
-        return members.get(user);
+        PermissionsLevel permission = members.get(user);
+        if (permission != null) {
+            return permission;
+        }
+        return null;
     }
 
     @Override
     public void updateUserPermissions(User userToUpdate, PermissionsLevel permissions, User updatingUser)
             throws GitlabAuthorisationException {
         authorise(updatingUser, PermissionsLevel.OWNER);
-
+        PermissionsLevel existingPermission = getUserPermissions(userToUpdate);
+        if (existingPermission != null && existingPermission.ordinal() <= permissions.ordinal()) {
+        throw new GitlabAuthorisationException(
+            "Cannot downgrade or override existing permissions through filtering authorisation");
+        }
+        if (!this.subgroups.isEmpty()) {
+            this.subgroups.forEach(subgroup -> {
+                try {
+                    subgroup.updateUserPermissions(userToUpdate, permissions, updatingUser);
+                } catch (GitlabAuthorisationException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            });
+        }
         members.put(userToUpdate, permissions);
+
     }
 
-    @Override
+
     public GitlabGroup createSubgroup(String name, User user) throws GitlabAuthorisationException {
         authorise(user, PermissionsLevel.MAINTAINER);
 
@@ -58,7 +68,7 @@ public class GitlabGroup implements GitlabPermissionsNode {
         return group;
     }
 
-    @Override
+
     public GitlabProject createProject(String name, User user) throws GitlabAuthorisationException {
         authorise(user, PermissionsLevel.DEVELOPER);
 
@@ -67,13 +77,7 @@ public class GitlabGroup implements GitlabPermissionsNode {
         return project;
     }
 
-    private void authorise(User user, PermissionsLevel requiredPermissionsLevel) throws GitlabAuthorisationException {
-        int perms = getUserPermissions(user).ordinal();
-        int requiredPerms = requiredPermissionsLevel.ordinal();
-        if (perms > requiredPerms) {
-            throw new GitlabAuthorisationException("User is not authorised");
-        }
-    }
+
 
     @Override
     public JSONObject toJSON() {

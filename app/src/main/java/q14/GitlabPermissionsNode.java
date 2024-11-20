@@ -2,17 +2,29 @@ package q14;
 
 import org.json.JSONObject;
 
-public interface GitlabPermissionsNode {
-    public String getName();
+public abstract class GitlabPermissionsNode {
+    public abstract String getName();
 
-    public PermissionsLevel getUserPermissions(User user);
+    public abstract PermissionsLevel getUserPermissions(User user);
 
-    public void updateUserPermissions(User userToUpdate, PermissionsLevel permissions, User userUpdating)
+    public abstract void updateUserPermissions(User userToUpdate, PermissionsLevel permissions, User userUpdating)
             throws GitlabAuthorisationException;
 
-    public GitlabGroup createSubgroup(String name, User creator) throws GitlabAuthorisationException;
+    public GitlabGroup createSubgroup(String name, User creator) throws GitlabAuthorisationException {
+        return null;
+    }
 
-    public GitlabProject createProject(String name, User creator) throws GitlabAuthorisationException;
+    public  GitlabProject createProject(String name, User user) throws GitlabAuthorisationException {
+        return null;
+    }
 
-    public JSONObject toJSON();
+    public void authorise(User user, PermissionsLevel requiredPermissionsLevel) throws GitlabAuthorisationException {
+        int perms = getUserPermissions(user).ordinal();
+        int requiredPerms = requiredPermissionsLevel.ordinal();
+        if (perms > requiredPerms) {
+            throw new GitlabAuthorisationException("User is not authorised");
+        }
+    }
+
+    public abstract JSONObject toJSON();
 }

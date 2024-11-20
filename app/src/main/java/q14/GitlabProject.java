@@ -5,7 +5,7 @@ import java.util.Map;
 
 import org.json.JSONObject;
 
-public class GitlabProject implements GitlabPermissionsNode {
+public class GitlabProject extends GitlabPermissionsNode {
     private String name;
     private Map<User, PermissionsLevel> members = new HashMap<User, PermissionsLevel>();
 
@@ -26,10 +26,6 @@ public class GitlabProject implements GitlabPermissionsNode {
         return members.get(user);
     }
 
-    @Override
-    public GitlabGroup createSubgroup(String name, User user) {
-        return null;
-    }
 
     @Override
     public void updateUserPermissions(User userToUpdate, PermissionsLevel permissions, User updatingUser)
@@ -38,18 +34,6 @@ public class GitlabProject implements GitlabPermissionsNode {
         members.put(userToUpdate, permissions);
     }
 
-    @Override
-    public GitlabProject createProject(String name, User user) throws GitlabAuthorisationException {
-        return null;
-    }
-
-    private void authorise(User user, PermissionsLevel requiredPermissionsLevel) throws GitlabAuthorisationException {
-        int perms = getUserPermissions(user).ordinal();
-        int requiredPerms = requiredPermissionsLevel.ordinal();
-        if (perms > requiredPerms) {
-            throw new GitlabAuthorisationException("User is not authorised");
-        }
-    }
 
     public void runPipeline(Runnable runnable) {
         GitlabRunner runner = new GitlabRunner();
